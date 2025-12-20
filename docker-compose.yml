@@ -1,0 +1,145 @@
+
+services:
+  # Base de données PostgreSQL pour les données DVF (structurées)
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_dvf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" 
+        max-file: "3"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/raw:/data/raw  # Montage des données brutes
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - data_network
+
+  # Base de données MongoDB pour les données de délinquance (non structurées)
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb_delinquance
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" 
+        max-file: "3"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}  # Base de données par défaut     
+    volumes:
+      - mongodb_data:/data/db
+      - ./data/raw:/data/raw  # Montage des données brutes
+
+    ports:
+      - "127.0.0.1:27017:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - data_network
+
+  # Apache Spark pour le traitement des données
+  spark:
+    image: apache/spark:3.5.6-scala2.12-java11-python3-ubuntu  # Image officielle avec Python 3
+    container_name: spark_master
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"  
+        max-file: "3"
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "127.0.0.1:8080:8080"  # UI Spark
+      - "127.0.0.1:7077:7077"  # Port master
+    volumes:
+      - ./scripts:/opt/spark/work-dir/scripts:ro
+      - ./data:/opt/spark/work-dir/data:ro
+    networks:
+      - data_network
+
+  # Service dédié pour exécuter les scripts d'importation
+  data_processing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: data_processing
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" 
+        max-file: "3"
+    env_file: .env
+    volumes:
+      - ./scripts:/app/scripts
+      - ./data/raw:/app/data/raw
+      - ./.env:/app/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    command: >
+      sh -c "
+      python /app/scripts/import_sql_data.py &&
+      python /app/scripts/import_nosql_data.py &&
+      echo 'Données importées avec succès !'
+      "
+    networks:
+      - data_network
+
+
+  # Jupyter Lab
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jupyter_lab
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m" 
+        max-file: "3"
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work/notebooks
+      - ./data:/home/jovyan/work/data
+      - ./output:/home/jovyan/work/output
+      - ./.env:/home/jovyan/work/.env
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
+    depends_on:
+      data_processing:
+        condition: service_completed_successfully
+      spark:
+        condition: service_started
+    networks:
+      - data_network
+
+# Volumes pour la persistance des données
+volumes:
+  postgres_data:
+  mongodb_data: 
+
+# Réseau dédié pour la communication entre conteneurs
+networks:
+  data_network:
+    driver: bridge

@@ -1,0 +1,20 @@
+# Ignorer le fichier .env
+.env
+
+# Ignorer le dossier data/ et tous ses sous-dossiers
+data/
+
+# Ignorer les fichiers Python compilés
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorer les environnements virtuels
+.venv/
+venv/
+
+# Ignorer les fichiers de configuration IDE
+.idea/
+.vscode/
+
