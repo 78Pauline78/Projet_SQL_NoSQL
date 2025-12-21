@@ -1,7 +1,7 @@
 # Projet_SQL_NoSQL
 
 ## Description
-
+Ce projet vise à **collecter, nettoyer, stocker et analyser** des données ouvertes sur la délinquance et les valeurs foncières en Île-de-France, incluant Paris et sa couronne périurbaine (75, 92, 93, 94, 95).
 
 ## Prérequis
 - Docker et Docker Compose installés
@@ -10,6 +10,7 @@
 ## Initialisation
 1. Cloner ce dépôt.
 2. Créer un fichier `.env` à partir du template (voir `.env.example`).
+3. Charger les fichier 
 4. Lancer les conteneurs : `docker-compose up -d`.
 
 

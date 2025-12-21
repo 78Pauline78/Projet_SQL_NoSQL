@@ -56,19 +56,46 @@ services:
 
   # Apache Spark pour le traitement des données
   spark:
-    image: apache/spark:3.5.6-scala2.12-java11-python3-ubuntu  # Image officielle avec Python 3
+    image: apache/spark:3.5.0-scala2.12-java11-python3-ubuntu
     container_name: spark_master
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"  
-        max-file: "3"
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
     environment:
       - SPARK_MODE=master
     ports:
       - "127.0.0.1:8080:8080"  # UI Spark
       - "127.0.0.1:7077:7077"  # Port master
+    volumes:
+      - ./scripts:/opt/spark/work-dir/scripts:ro
+      - ./data:/opt/spark/work-dir/data:ro
+    networks:
+      - data_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Apache Spark Worker (à ajouter)
+  spark_worker:
+    image: apache/spark:3.5.0-scala2.12-java11-python3-ubuntu
+    container_name: spark_worker
+    depends_on:
+      spark:
+        condition: service_healthy
+    command: >
+      sh -c "
+      until curl -f http://spark:8080; do
+        echo 'Attente du démarrage du Master Spark...'
+        sleep 2
+      done &&
+      /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark:7077
+      "
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_DRIVER_MEMORY=512m
     volumes:
       - ./scripts:/opt/spark/work-dir/scripts:ro
       - ./data:/opt/spark/work-dir/data:ro
@@ -142,4 +169,5 @@ volumes:
 # Réseau dédié pour la communication entre conteneurs
 networks:
   data_network:
+    name: data_network
     driver: bridge
