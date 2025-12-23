@@ -5,4 +5,5 @@ numpy
 sqlalchemy
 psycopg2-binary
 pyspark==3.5.6
-mongo-spark-connector==10.2.0
+matplotlib
+seaborn

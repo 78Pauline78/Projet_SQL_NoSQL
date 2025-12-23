@@ -4,6 +4,9 @@
 # Ignorer le dossier data/ et tous ses sous-dossiers
 data/
 
+# Ignorer le dossier notebooks/old et tous ses sous-dossiers
+notebooks/old
+
 # Ignorer les fichiers Python compilés
 __pycache__/
 *.pyc

@@ -32,17 +32,18 @@ if inspector.has_table("delinquance_idf"):
             print("✅ Les données existent déjà dans PostgreSQL. Import annulé.")
             exit(0)  # Quitter le script si des données existent
 
-# Chemins des fichiers dans le conteneur
+#Chemins des fichiers dans le conteneur
 gz_path = "/app/data/raw/donnee-data.gouv-2024-geographie2025-produit-le2025-06-04.csv.gz"
 csv_path = "/app/data/raw/donnees_delinquance.csv"
+commune_csv_path ="/app/data/raw/019HexaSmal.csv"
 
-# Décompresser le fichier .gz
+#Décompresser le fichier .gz
 with gzip.open(gz_path, 'rb') as f_in:
     with open(csv_path, 'wb') as f_out:
         f_out.writelines(f_in)
 print(f"Fichier décompressé : {csv_path}")
 
-# Lire le CSV avec les bons paramètres
+#Lire le CSV avec les bons paramètres
 df = pd.read_csv(
     csv_path,
     sep=';',
@@ -54,7 +55,16 @@ df = pd.read_csv(
     on_bad_lines='warn',
 )
 
-# Afficher les infos sur les colonnes (optionnel, pour débogage)
+#Lire le CSV des communes (ajuste le séparateur si nécessaire)
+df_communes = pd.read_csv(
+    commune_csv_path,
+    sep=';',
+    encoding='latin1',  # ou 'iso-8859-1'
+    dtype={'#Code_commune_INSEE': str, 'Nom_de_la_commune': str, 'Code_postal': str}
+)
+print("Colonnes dans df_communes :", df_communes.columns.tolist())
+
+#Afficher les infos sur les colonnes (optionnel, pour débogage)
 na_percent = df.isna().mean() * 100
 columns_info = pd.DataFrame({
     'Type': df.dtypes,
@@ -63,15 +73,25 @@ columns_info = pd.DataFrame({
 print("Infos sur les colonnes :")
 print(columns_info)
 
-# Filtrer pour l'Île-de-France
+#Filtrer pour l'Île-de-France
 idf_codes = ['75', '92', '93', '94']
 idf_data = df[df['CODGEO_2025'].astype(str).str[:2].isin(idf_codes)]
 print(f"Nombre de lignes pour la petite couronne : {len(idf_data)}")
 
-# Nettoyer les données
+#Nettoyer les données
 idf_data = idf_data.replace({np.nan: None})
 idf_data["nombre"] = pd.to_numeric(idf_data["nombre"], errors="coerce")
 idf_data["taux_pour_mille"] = pd.to_numeric(idf_data["taux_pour_mille"], errors="coerce")
+
+#Fusionner avec les informations des communes
+idf_data = idf_data.merge(
+    df_communes,
+    left_on='CODGEO_2025',
+    right_on='#Code_commune_INSEE',
+    how='left'
+)
+
+print(idf_data.head(5))
 
 
 # Définir les types pour SQLAlchemy
