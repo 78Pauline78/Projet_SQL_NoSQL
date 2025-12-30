@@ -13,8 +13,9 @@ Ce projet vise à **collecter, nettoyer, stocker et analyser** des données ouve
   - *donnee-data.gouv-2024-geographie2025-produit-le2025-06-04.csv.gz* : https://static.data.gouv.fr/resources/bases-statistiques-communale-departementale-et-regionale-de-la-delinquance-enregistree-par-la-police-et-la-gendarmerie-nationales/20250710-144817/donnee-data.gouv-2024-geographie2025-produit-le2025-06-04.csv.gz
   - *valeursfoncieres-2023.txt.zip* : https://static.data.gouv.fr/resources/demandes-de-valeurs-foncieres/20251018-234851/valeursfoncieres-2023.txt.zip
   - *valeursfoncieres-2024.txt.zip* : https://static.data.gouv.fr/resources/demandes-de-valeurs-foncieres/20251018-234857/valeursfoncieres-2024.txt.zip
-  - 019HexaSmal.csv: https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw
+  - 019HexaSmal.csv: https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw pour les code postaux (pour base sql délinquance)
   
+
 3. Créer un fichier `.env` à partir du template (voir `.env.example`).
 4. Lancer les conteneurs : `docker-compose up -d`.
 
