@@ -2,10 +2,11 @@
 
 ## Description
 Ce projet vise à **collecter, nettoyer, stocker et analyser** des données ouvertes sur la délinquance et les valeurs foncières en Île-de-France, incluant Paris et sa couronne périurbaine (75, 92, 93, 94, 95).
+Les données de délinquance, de par leur structure, seront stockées dans une base PostgreSQL. Quant aux données de valeurs foncières, moins structurées, on utilisera une base MongoDB.
 
 ## Prérequis
 - Docker et Docker Compose installés
-
+- le fichier .env en rachine du projet
 
 ## Initialisation
 1. Cloner ce dépôt.
@@ -19,6 +20,10 @@ Ce projet vise à **collecter, nettoyer, stocker et analyser** des données ouve
 3. Créer un fichier `.env` à partir du template (voir `.env.example`).
 4. Lancer les conteneurs : `docker-compose up -d`.
 
+Toutes les données pour les départements de la Petite Couronne sont stockées automatiquement dans les bases lors du premier lancement du docker (ignorées par la suite).
+La gestion des imports se fait par les fichiers python:
+-  import_nosql_data.py
+-  import_sql_data.py
 
 ## Accès aux services
 - Jupyter Lab : [http://localhost:8888](http://localhost:8888) (token dans `.env`)
